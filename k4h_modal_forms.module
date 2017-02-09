@@ -1,0 +1,77 @@
+<?php
+
+/**
+ * @file Integration for k4h site and epub_export.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function k4h_modal_forms_menu() {
+  $items = array();
+  $items['admin/config/user-interface/k4h_modal_forms'] = array(
+    'title' => 'K4H Modal Forms',
+    'description' => 'Setup configuration for K4H modal forms (for nodes with custom forms embedded in content).',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('k4h_modal_forms_settings'),
+    'position' => 'right',
+    'weight' => -10,
+    'access callback' => 'user_access',
+    'access arguments' => array('access administration pages'),
+    'file' => 'k4h_modal_forms.admin.inc',
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function k4h_modal_forms_form_alter(&$form, &$form_state, $form_id) {
+  $args = arg();
+  // Skip if the form isn't being loaded in a modal
+  if ($args[0] != 'modal_forms' && $args[1] != 'ajax') {
+    RETURN;
+  }
+  $nodes = variable_get('k4h_modal_forms_nodes', '');
+  $lines = preg_split('/\r\n|\r|\n/', $nodes);
+  foreach ($lines as $num => $line) {
+    $inputs = explode(':', $line);
+    // Add to the email tracking for content adpatation form
+    if ($form_id == 'webform_client_form_' . $inputs[1]) {
+      $form['#submit'][] = 'k4h_modal_forms_email_tracking_submit';
+    }
+  }
+}
+
+/**
+ * Implements hook_preprocess_page().
+ *
+ * Adds in JS to handle forwarding the user to the selected resource
+ * when the modal is closed.
+ */
+function k4h_modal_forms_preprocess_page($vars) {
+/* TODO: Implement use of the submit/both option for when to forward to the resource */
+  $args = arg();
+  $nodes = variable_get('k4h_modal_forms_nodes', '');
+  $lines = preg_split('/\r\n|\r|\n/', $nodes);
+  foreach ($lines as $num => $line) {
+    $inputs = explode(':', $line);
+    $nid = $inputs[0];
+    if ($args[1] != $nid) {
+      continue;
+    }
+
+    if (isset($vars['page']['content']['system_main']['nodes']) && $vars['page']['content']['system_main']['nodes'][$nid]) {
+      $node = node_load($nid);
+      // Link to the resource will either be from a link field or a file field
+      $link = (isset($node->{$inputs[2]}[LANGUAGE_NONE][0]['url'])) ? $node->{$inputs[2]}[LANGUAGE_NONE][0]['url'] : file_create_url($node->{$inputs[2]}[LANGUAGE_NONE][0]['uri']);
+      drupal_add_js("
+          jQuery(document).on('CToolsDetachBehaviors', function() {
+            console.log('Modal has closed');
+            window.location.href = '" . $link . "';
+          });
+      ", "inline");
+      $vars['scripts'] = drupal_get_js();
+    }
+  }
+}

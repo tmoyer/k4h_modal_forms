@@ -1,0 +1,8 @@
+name = K4H Modal Forms
+description = Additional handling to customize modal forms functionality.
+core = 7.x
+php = 5.4
+
+package = K4H
+
+dependencies[] = modal_forms
