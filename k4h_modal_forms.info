@@ -6,3 +6,4 @@ php = 5.4
 package = K4H
 
 dependencies[] = modal_forms
+dependencies[] = jquery_update
