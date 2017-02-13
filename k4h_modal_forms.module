@@ -9,13 +9,13 @@
  */
 function k4h_modal_forms_menu() {
   $items = array();
-  $items['admin/config/user-interface/k4h_modal_forms'] = array(
+  $items['admin/config/development/k4h_modal_forms'] = array(
     'title' => 'K4H Modal Forms',
     'description' => 'Setup configuration for K4H modal forms (for nodes with custom forms embedded in content).',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('k4h_modal_forms_settings'),
     'position' => 'right',
-    'weight' => -10,
+    'weight' => 0,
     'access callback' => 'user_access',
     'access arguments' => array('access administration pages'),
     'file' => 'k4h_modal_forms.admin.inc',
