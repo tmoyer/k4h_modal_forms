@@ -66,12 +66,44 @@ function k4h_modal_forms_preprocess_page($vars) {
       // Link to the resource will either be from a link field or a file field
       $link = (isset($node->{$inputs[2]}[LANGUAGE_NONE][0]['url'])) ? $node->{$inputs[2]}[LANGUAGE_NONE][0]['url'] : file_create_url($node->{$inputs[2]}[LANGUAGE_NONE][0]['uri']);
       drupal_add_js("
-          jQuery(document).on('CToolsDetachBehaviors', function() {
+        jQuery(document).ready(function ($) {
+          $(document).on('CToolsDetachBehaviors', function() {
             console.log('Modal has closed');
             window.location.href = '" . $link . "';
           });
-      ", "inline");
+        });
+      ", array('type' => 'inline', 'scope' => 'footer'));
       $vars['scripts'] = drupal_get_js();
     }
   }
+}
+
+/**
+ * Implements hook_process_html().
+ */
+function k4h_modal_forms_process_html(&$vars) {
+  $args = arg();
+  $nodes = variable_get('k4h_modal_forms_nodes', '');
+  $lines = preg_split('/\r\n|\r|\n/', $nodes);
+  foreach ($lines as $num => $line) {
+    $inputs = explode(':', $line);
+    $nid = $inputs[0];
+    if ($args[1] != $nid) {
+      continue;
+    }
+
+    // Define the dataLayer for Google TagManager
+    $js = "<!--//--><![CDATA[//><!--
+      jQuery(document).ready(function ($) {
+        $('.file').find('a').addClass('ctools-use-modal ctools-modal-modal-popup-small').attr('href', '/modal_forms/nojs/webform/" . $inputs[1] . "').removeAttr('type');
+      });
+      //--><!]]>
+      ";
+    $output = array(
+      '#type' => 'markup',
+      '#markup' => '<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script><script type="text/javascript">' . $js . '</script>' . "\r\n",
+    );
+    $vars['page_top'] = drupal_render($output) . $vars['page_top'];
+  }
+  return $vars;
 }
