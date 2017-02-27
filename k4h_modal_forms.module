@@ -27,6 +27,7 @@ function k4h_modal_forms_menu() {
  * Implements hook_form_alter().
  */
 function k4h_modal_forms_form_alter(&$form, &$form_state, $form_id) {
+  global $base_url;
   $args = arg();
   // Skip if the form isn't being loaded in a modal
   if ($args[0] != 'modal_forms' && $args[1] != 'ajax') {
@@ -38,9 +39,22 @@ function k4h_modal_forms_form_alter(&$form, &$form_state, $form_id) {
     $inputs = explode(':', $line);
     // Add to the email tracking for content adpatation form
     if ($form_id == 'webform_client_form_' . $inputs[1]) {
+      if (current_path() == 'system/ajax') {
+        $current_path = (!empty($base_url)) ? $base_url : $_SERVER['HTTP_REFERER'];
+      }
       $form['#submit'][] = 'k4h_modal_forms_email_tracking_submit';
+      $form['actions']['cancel'] = array(
+        '#markup' => l(t('No thanks'), '/modal_forms/nojs/dismiss', array('attributes' => array('class' => 'ctools-use-modal', 'ctools-modal-modal-popup-small')))
+      );
     }
   }
+}
+
+function k4h_modal_forms_email_tracking_submit($form, &$form_state) {
+  ctools_include('ajax');
+  ctools_include('modal');
+  $form_state['ajax_commands'][] = ctools_modal_command_dismiss();
+  $form_state['ajax_commands'][] = ctools_modal_form_render($form_state, $output);
 }
 
 /**
@@ -68,7 +82,6 @@ function k4h_modal_forms_preprocess_page($vars) {
       drupal_add_js("
         jQuery(document).ready(function ($) {
           $(document).on('CToolsDetachBehaviors', function() {
-            console.log('Modal has closed');
             window.location.href = '" . $link . "';
           });
         });
