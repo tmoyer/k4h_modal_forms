@@ -42,9 +42,10 @@ function k4h_modal_forms_form_alter(&$form, &$form_state, $form_id) {
       if (current_path() == 'system/ajax') {
         $current_path = (!empty($base_url)) ? $base_url : $_SERVER['HTTP_REFERER'];
       }
+      $cancel_text = (isset($inputs[4]) && !empty($inputs[4])) ? t($inputs[4]) : t('No thanks');
       $form['#submit'][] = 'k4h_modal_forms_email_tracking_submit';
       $form['actions']['cancel'] = array(
-        '#markup' => l(t('No thanks'), '/modal_forms/nojs/dismiss', array('attributes' => array('class' => 'ctools-use-modal', 'ctools-modal-modal-popup-small')))
+        '#markup' => l($cancel_text, '/modal_forms/nojs/dismiss', array('attributes' => array('class' => 'ctools-use-modal', 'ctools-modal-modal-popup-small')))
       );
     }
   }

@@ -24,7 +24,7 @@ function k4h_modal_forms_settings() {
     '#title' => t('Nodes and settings for modal forms in content.'),
     '#default_value' => variable_get('k4h_modal_forms_nodes', ''),
     '#size' => 6,
-    '#description' => t('Enter the node id (nid), the webform\'s nid, machine name of which field to redirect to (i.e. field_resource_file), and either "submit" or "both" for whether to redirect only when the form is submitted or just whenever the form it submitted or closed. The entry must be in this format: "nid:nid:field:submit" (i.e. "234:54:field_resource_file:both").'),
+    '#description' => t('Enter the node id (nid), the webform\'s nid, machine name of which field to redirect to (i.e. field_resource_file), and either "submit" or "both" for whether to redirect only when the form is submitted or just whenever the form it submitted or closed, and optionally text to be used for the cancel link (the default is "No thanks"). The entry must be in this format: "nid:nid:field:submit:cancel text" (i.e. "234:54:field_resource_file:both:No thanks--proceed to publication").'),
     '#wysiwyg' => false,
   );
 /*
@@ -66,8 +66,8 @@ function k4h_modal_forms_settings_form_validate($form, &$form_state) {
   $lines = preg_split('/\r\n|\r|\n/', $form_state['values']['k4h_modal_forms_nodes']);
   foreach ($lines as $num => $line) {
     $inputs = explode(':', $line);
-    if (count($inputs) != 4) {
-      form_set_error('k4h_modal_forms_nodes', t('You must enter 4 values per line, delimited by a ":" (colon) in this format: "nid:nid:field:[submit or both]" (on line !num)', array('!num' => $num + 1)));
+    if (count($inputs) < 4) {
+      form_set_error('k4h_modal_forms_nodes', t('You must enter 4 values per line (with an optional 5th value), delimited by a ":" (colon) in this format: "nid:nid:field:[submit or both]:cancel link text" (on line !num)', array('!num' => $num + 1)));
     }
     if (!is_numeric($inputs[0])) {
       form_set_error('k4h_modal_forms_nodes', t('The 1st part of each entry must be the numeric id for a node. Please check and retry (on line !num).', array('!num' => $num + 1)));
