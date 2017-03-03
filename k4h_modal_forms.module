@@ -136,7 +136,7 @@ function k4h_modal_forms_form_alter(&$form, &$form_state, $form_id) {
   $modal_pages = unserialize(variable_get('k4h_modal_nodes', ''));
   // If there are no pages with modal popups on them, stop here
   if (empty($modal_pages)) {
-    continue;
+    return;
   }
   foreach ($modal_pages as $nid => $webform_nid) {
     // Only proceed if this is a page with a modal form popup
@@ -277,7 +277,7 @@ function k4h_modal_forms_process_html(&$vars) {
   $modal_pages = unserialize(variable_get('k4h_modal_nodes', ''));
   // If there are no pages with modal popups on them, stop here
   if (empty($modal_pages)) {
-    continue;
+    return;
   }
   foreach ($modal_pages as $nid => $webform_nid) {
     // Only proceed if this is a page with a modal form popup
