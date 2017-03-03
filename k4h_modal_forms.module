@@ -35,8 +35,8 @@ function k4h_modal_forms_menu() {
 function k4h_modal_forms_form_alter(&$form, &$form_state, $form_id) {
   global $base_url;
   $args = arg();
+
   if ($form_id == 'webform_configure_form') {
-//dpr($form);
     $sm_type = variable_get('modal_forms_popup_small_type', 'fixed');
     $md_type = variable_get('modal_forms_popup_medium_type', 'fixed');
     $lg_type = variable_get('modal_forms_popup_larg_type', 'scale');
@@ -57,106 +57,111 @@ function k4h_modal_forms_form_alter(&$form, &$form_state, $form_id) {
     $defaults = unserialize(variable_get('k4h_modal_forms_' . arg(1), ''));
     $modal_node = node_load($defaults['k4h_modal_node_autocomplete']);
     $node_autocomplete = (isset($modal_node->title)) ? "$modal_node->title [id: $modal_node->nid]" : '';
-//    $usable_fields = k4h_modal_forms_get_usable_fields();
     $form['k4h_modal'] = array(
       '#type' => 'fieldset',
       '#title' => 'K4H Modal Form Popup',
       '#collapsible' => 1,
       '#collapsed' => 1,
       '#weight' => -2,
-      'k4h_modal_node_autocomplete' =>  array(
-        '#type' => 'textfield',
-        '#title' => 'Autocomplete node field',
-        '#description' => 'Find the node you want this form associated with',
-        '#maxlength' => 512,
-        '#autocomplete_path' => 'ctools/autocomplete/node',
-        '#ajax' => array(
-          'callback' => '_k4h_modal_forms_fields_list',
-          'wrapper' => 'node-fields-list',
-          'method' => 'replace',
-          'event' => 'blur',
-        ),
-        '#default_value' => $node_autocomplete,
+    );
+    $form['k4h_modal']['k4h_modal_node_autocomplete'] =  array(
+      '#type' => 'textfield',
+      '#title' => 'Autocomplete node field',
+      '#description' => 'Find the node you want this form associated with',
+      '#maxlength' => 512,
+      '#autocomplete_path' => 'ctools/autocomplete/node',
+      '#ajax' => array(
+        'callback' => '_k4h_modal_forms_fields_list',
+        'wrapper' => 'node-fields-list',
+        'method' => 'replace',
+        'event' => 'blur',
       ),
-      'k4h_modal_field_override' => array(
-//        '#type' => 'container',
-        '#tree' => FALSE,
-        '#prefix' => '<div id="node-fields-list">',
-        '#suffix' => '</div>',
-//        'k4h_modal_field_override_list' => array(
-          '#type' => 'radios',
-          '#title' => 'Attach popup to field',
-          '#description' => 'Select the field to attach the popup to.',
-          
-//          '#parents' => array(
-//            '0' => 'k4h_modal_field_override',
-//          ),
-          '#options' => k4h_modal_forms_get_usable_fields(),
-          '#default_value' => (!empty($defaults['k4h_modal_field_override'])) ? $defaults['k4h_modal_field_override'] : '',
-//        ), // end k4h_modal_field_override_list
-      ), // end k4h_modal_field_override
-      'k4h_modal_forward_action' => array(
-        '#type' => 'radios',
-        '#title' => 'Select when to forward the user to the resource',
-        '#options' => array(
-          'submit' => 'Only on submit',
-          'both' => 'On submit and on cancel',
-        ),
-        '#default_value' => (!empty($defaults['k4h_modal_forward_action'])) ? $defaults['k4h_modal_forward_action'] : 'both',
+      '#default_value' => $node_autocomplete,
+    );
+    $form['k4h_modal']['k4h_modal_field_override'] = array(
+      '#tree' => FALSE,
+      '#prefix' => '<div id="node-fields-list">',
+      '#suffix' => '</div>',
+      '#type' => 'radios',
+      '#title' => 'Attach popup to field',
+      '#description' => 'Select the field to attach the popup to.',
+      '#options' => k4h_modal_forms_get_usable_fields(),
+      '#default_value' => (!empty($defaults['k4h_modal_field_override'])) ? $defaults['k4h_modal_field_override'] : '',
+    ); // end k4h_modal_field_override
+    $form['k4h_modal']['k4h_modal_forward_action'] = array(
+      '#type' => 'radios',
+      '#title' => 'Select when to forward the user to the resource',
+      '#options' => array(
+        'submit' => 'Only on submit',
+        'both' => 'On submit and on cancel',
       ),
-      'k4h_modal_cancel_link' => array(
-        '#type' => 'textfield',
-        '#title' => 'Text to use for the cancel link',
-        '#maxlength' => 512,
-        '#default_value' => (!empty($defaults['k4h_modal_cancel_link'])) ? $defaults['k4h_modal_cancel_link'] : t('No thanks'),
+      '#default_value' => (!empty($defaults['k4h_modal_forward_action'])) ? $defaults['k4h_modal_forward_action'] : 'both',
+    );
+    $form['k4h_modal']['k4h_modal_cancel_link'] = array(
+      '#type' => 'textfield',
+      '#title' => 'Text to use for the cancel link',
+      '#maxlength' => 512,
+      '#default_value' => (!empty($defaults['k4h_modal_cancel_link'])) ? $defaults['k4h_modal_cancel_link'] : t('No thanks'),
+    );
+    $form['k4h_modal']['k4h_modal_modal_size'] = array(
+      '#type' => 'radios',
+      '#title' => 'Popup size',
+      '#options' => array(
+        'small' => 'Small (' . $modals['small']['size'] . ')',
+        'medium' => 'Medium (' . $modals['medium']['size'] . ')',
+        'large' => 'Large (' . $modals['large']['size'] . ')',
       ),
-      'k4h_modal_modal_size' => array(
-        '#type' => 'radios',
-        '#title' => 'Popup size',
-        '#options' => array(
-          'small' => 'Small (' . $modals['small']['size'] . ')',
-          'medium' => 'Medium (' . $modals['medium']['size'] . ')',
-          'large' => 'Large (' . $modals['large']['size'] . ')',
-        ),
-        '#default_value' => (!empty($defaults['k4h_modal_modal_size'])) ? $defaults['k4h_modal_modal_size'] : 'small',
-      ),
+      '#default_value' => (!empty($defaults['k4h_modal_modal_size'])) ? $defaults['k4h_modal_modal_size'] : 'small',
     );
     $form['#submit'][] = 'k4h_modal_forms_webform_submit';
-  }
+
+    if (!empty($form_state['values']['k4h_modal_node_autocomplete'])) {
+      $values = $form_state['values'];
+      $value = (strstr($values['k4h_modal_node_autocomplete'], '[id:')) ? $values['k4h_modal_node_autocomplete'] : $form_state['triggering_element']['#value'];
+      if (strstr($value, '[id:')) {
+        $nid_parts = explode('[', $form_state['values']['k4h_modal_node_autocomplete']);
+        $nid_parts2 = explode(': ', rtrim($nid_parts[1], ']'));
+        $node = node_load($nid_parts2[1]);
+      }
+      $type = (isset($node)) ? $node->type : NULL;
+      $form['k4h_modal']['k4h_modal_field_override']['#options'] = _k4h_modal_forms_fields_list_options($type);
+    }
+
+  } // end if this is a webform
 
   // Skip if the form isn't being loaded in a modal
   if ($args[0] != 'modal_forms' && $args[1] != 'ajax') {
     RETURN;
   }
-//  $nodes = variable_get('k4h_modal_forms_nodes', '');
-//  $lines = preg_split('/\r\n|\r|\n/', $nodes);
   $modal_pages = unserialize(variable_get('k4h_modal_nodes', ''));
   // If there are no pages with modal popups on them, stop here
   if (empty($modal_pages)) {
     continue;
   }
-//  foreach ($lines as $num => $line) {
   foreach ($modal_pages as $nid => $webform_nid) {
     // Only proceed if this is a page with a modal form popup
-    if ($nid != $args[1]) {
+    if ($webform_nid != $args[3]) {
       continue;
     }
-    $modal_details = unserialize(variable_get('k4h_modal_forms_' . $nid));
-//    $inputs = explode(':', $line);
+    $modal_details = unserialize(variable_get('k4h_modal_forms_' . $webform_nid));
     // Add to the email tracking for content adpatation form
     if ($form_id == 'webform_client_form_' . $webform_nid) {
       if (current_path() == 'system/ajax') {
         $current_path = (!empty($base_url)) ? $base_url : $_SERVER['HTTP_REFERER'];
       }
-      $cancel_text = (isset($modal_pages['k4h_modal_cancel_text']) && !empty($modal_pages['k4h_modal_cancel_text'])) ? t($modal_pages['k4h_modal_cancel_text']) : t('No thanks');
+      $cancel_text = (isset($modal_details['k4h_modal_cancel_link']) && !empty($modal_details['k4h_modal_cancel_link'])) ? t($modal_details['k4h_modal_cancel_link']) : t('No thanks@');
       $form['#submit'][] = 'k4h_modal_forms_email_tracking_submit';
+      $class = 'ctools-modal-modal-popup-' . $modal_details['k4h_modal_modal_size'];
       $form['actions']['cancel'] = array(
-        '#markup' => l($cancel_text, '/modal_forms/nojs/dismiss', array('attributes' => array('class' => 'ctools-use-modal', 'ctools-modal-modal-popup-medium')))
+        '#markup' => l($cancel_text, '/modal_forms/nojs/dismiss', array('attributes' => array('class' => array('ctools-use-modal', 'ctools-modal-modal-popup-' . $modal_details['k4h_modal_modal_size']))))
       );
     }
   }
 }
 
+/**
+ * Autocomplete callback to find node by title.
+ */
 function k4h_modal_forms_select($string) {
   $result = db_query("SELECT title, nid FROM {node} WHERE title LIKE '%$string%' LIMIT 10");
   $matches = array();
@@ -167,6 +172,9 @@ function k4h_modal_forms_select($string) {
   exit;
 }
 
+/**
+ * Submit handler for the modal form submit.
+ */
 function k4h_modal_forms_email_tracking_submit($form, &$form_state) {
   ctools_include('ajax');
   ctools_include('modal');
@@ -174,14 +182,13 @@ function k4h_modal_forms_email_tracking_submit($form, &$form_state) {
   $form_state['ajax_commands'][] = ctools_modal_form_render($form_state, $output);
 }
 
+/**
+ * Submit handler for webform config form submit.
+ */
 function k4h_modal_forms_webform_submit($form, &$form_state) {
-//  watchdog('k4h_modal_forms', 'autocomplete value: ' . $form_state['values']['k4h_modal_node_autocomplete']);
-dpr($form_state['values']);
-dpr($form);
-exit;
   // Exclude unnecessary elements.
   form_state_values_clean($form_state);
-  $modal_fields = array('k4h_modal_node_autocomplete', 'k4h_modal_field_override', 'k4h_modal_field_override_list', 'k4h_modal_forward_action', 'k4h_modal_cancel_link', 'k4h_modal_modal_size');
+  $modal_fields = array('k4h_modal_node_autocomplete', 'k4h_modal_field_override', 'k4h_modal_forward_action', 'k4h_modal_cancel_link', 'k4h_modal_modal_size');
   $k4h_modal_values = array();
   foreach ($form_state['values'] as $key => $value) {
     if (!in_array($key, $modal_fields)) {
@@ -225,43 +232,39 @@ exit;
  * when the modal is closed.
  */
 function k4h_modal_forms_preprocess_page($vars) {
-/* TODO: Implement use of the submit/both option for when to forward to the resource */
   $args = arg();
-//  $nodes = variable_get('k4h_modal_forms_nodes', '');
-//  $lines = preg_split('/\r\n|\r|\n/', $nodes);
 
   $modal_pages = unserialize(variable_get('k4h_modal_nodes', ''));
   // If there are no pages with modal popups on them, stop here
   if (empty($modal_pages)) {
     continue;
   }
-//  foreach ($lines as $num => $line) {
   foreach ($modal_pages as $nid => $webform_nid) {
     // Only proceed if this is a page with a modal form popup
     if ($nid != $args[1]) {
       continue;
     }
     $modal_details = unserialize(variable_get('k4h_modal_forms_' . $webform_nid));
-/*
-    $inputs = explode(':', $line);
-    $nid = $inputs[0];
-    if ($args[1] != $nid) {
+
+    // If there are no details to work with, stop
+    if (empty($modal_details)) {
       continue;
     }
-*/
 
     if (isset($vars['page']['content']['system_main']['nodes']) && $vars['page']['content']['system_main']['nodes'][$nid]) {
       $node = node_load($nid);
       // Link to the resource will either be from a link field or a file field
       $link = (isset($node->{$modal_details['k4h_modal_field_override']}[LANGUAGE_NONE][0]['url'])) ? $node->{$modal_details['k4h_modal_field_override']}[LANGUAGE_NONE][0]['url'] : file_create_url($node->{$modal_details['k4h_modal_field_override']}[LANGUAGE_NONE][0]['uri']);
-      drupal_add_js("
-        jQuery(document).ready(function ($) {
-          $(document).on('CToolsDetachBehaviors', function() {
-            window.location.href = '" . $link . "';
+      if ($modal_details['k4h_modal_forward_action'] == 'both') {
+        drupal_add_js("
+          jQuery(document).ready(function ($) {
+            $(document).on('CToolsDetachBehaviors', function() {
+              window.location.href = '" . $link . "';
+            });
           });
-        });
-      ", array('type' => 'inline', 'scope' => 'footer'));
-      $vars['scripts'] = drupal_get_js();
+        ", array('type' => 'inline', 'scope' => 'footer'));
+        $vars['scripts'] = drupal_get_js();
+      }
     }
   }
 }
@@ -271,32 +274,22 @@ function k4h_modal_forms_preprocess_page($vars) {
  */
 function k4h_modal_forms_process_html(&$vars) {
   $args = arg();
-//  $nodes = variable_get('k4h_modal_forms_nodes', '');
-//  $lines = preg_split('/\r\n|\r|\n/', $nodes);
   $modal_pages = unserialize(variable_get('k4h_modal_nodes', ''));
   // If there are no pages with modal popups on them, stop here
   if (empty($modal_pages)) {
     continue;
   }
-//  foreach ($lines as $num => $line) {
   foreach ($modal_pages as $nid => $webform_nid) {
     // Only proceed if this is a page with a modal form popup
     if ($nid != $args[1]) {
       continue;
     }
-    $modal_details = unserialize(variable_get('k4h_modal_forms_' . $nid));
-/*
-    $inputs = explode(':', $line);
-    $nid = $inputs[0];
-    if ($args[1] != $nid) {
-      continue;
-    }
-*/
+    $modal_details = unserialize(variable_get('k4h_modal_forms_' . $webform_nid));
 
     // Define the dataLayer for Google TagManager
     $js = "<!--//--><![CDATA[//><!--
       jQuery(document).ready(function ($) {
-        $('.file').find('a').addClass('ctools-use-modal ctools-modal-modal-popup-medium').attr('href', '/modal_forms/nojs/webform/" . $webform_nid . "').removeAttr('type');
+        $('.file').find('a').addClass('ctools-use-modal ctools-modal-modal-popup-" . $modal_details['k4h_modal_modal_size'] . "').attr('href', '/modal_forms/nojs/webform/" . $webform_nid . "').removeAttr('type');
       });
       //--><!]]>
       ";
@@ -309,6 +302,15 @@ function k4h_modal_forms_process_html(&$vars) {
   return $vars;
 }
 
+/**
+ * Provides a list of available fields used within a content type (bundle).
+ *
+ * @param $bundle
+ *   A bundle type / content type.
+ *
+ * @return
+ *   An array of fields indexed by fieldname.
+ */
 function k4h_modal_forms_get_available_fields($bundle) {
   $usable_fields = k4h_modal_forms_get_usable_fields();
   $keys = array_keys(field_info_instances('node', $bundle));
@@ -321,65 +323,57 @@ function k4h_modal_forms_get_available_fields($bundle) {
   return $fields;
 }
 
+/**
+ * Provides a list of all possible link and file type fields.
+ *
+ * @return
+ *   An array of fields indexed by fieldname.
+ */
 function k4h_modal_forms_get_usable_fields() {
-  $result = db_query("select field_name from field_config where type in (:types)", array(':types' => array('file', 'link_field')));
-  $fields = array();
-  foreach ($result as $record) {
-    $fields[$record->field_name] = $record->field_name;
+  $fields = &drupal_static(__FUNCTION__);
+  if (!isset($fields)) {
+    if ($cache = cache_get('k4h_modal_forms_usable_fields')) {
+      $fields = $cache->data;
+    }
+    else {
+      $result = db_query("select field_name from field_config where type in (:types)", array(':types' => array('file', 'link_field')));
+      $fields = array();
+      foreach ($result as $record) {
+        $fields[$record->field_name] = $record->field_name;
+      }
+      cache_set('k4h_modal_forms_usable_fields', $fields, 'cache');
+    }
   }
   return $fields;
 }
 
-function _k4h_modal_forms_fields_list(&$form, &$form_state) {
-//      watchdog('k4h_modal_forms', print_r($form_state['triggering_element'], TRUE));
-//      watchdog('k4h_modal_forms', print_r($form_state['values'], TRUE));
-  $values = $form_state['values'];
-//watchdog('k4h_modal_forms', print_r($values, TRUE));
-  
-  $value = (strstr($values['k4h_modal_node_autocomplete'], '[id:')) ? $values['k4h_modal_node_autocomplete'] : $form_state['triggering_element']['#value'];
-//  watchdog('k4h_modal_forms', 'value: ' . $value);
-  if (strstr($value, '[id:')) {
-    $nid_parts = explode('[', $form_state['values']['k4h_modal_node_autocomplete']);
-    $nid_parts2 = explode(': ', rtrim($nid_parts[1], ']'));
-    $node = node_load($nid_parts2[1]);
-  }
-  $type = (isset($node)) ? $node->type : NULL;
-//watchdog('k4h_modal_forms', 'type: ' . $type);
-//watchdog('k4h_modal_forms', print_r($nid_parts, TRUE));
-//watchdog('k4h_modal_forms', print_r($nide_parts2, TRUE));
-//watchdog('k4h_modal_forms', 'nid: ' . $nid_parts2[1]);
-    $defaults = unserialize(variable_get('k4h_modal_forms_' . arg(1), ''));
-
-  // Override fields list with new, more limited options
-  $form['k4h_modal_field_override'] = array(
-//        '#type' => 'container',
-        '#tree' => FALSE,
-        '#prefix' => '<div id="node-fields-list">',
-        '#suffix' => '</div>',
-//        'k4h_modal_field_override_list' => array(
-          '#type' => 'radios',
-          '#title' => 'Attach popup to field',
-          '#description' => 'Select the field to attach the popup to.',
-//          '#default_value' => 1,
-          
-//          '#parents' => array(
-//            '0' => 'k4h_modal_field_override',
-//          ),
-          '#options' => _k4h_modal_forms_fields_list_options($type),
-//          '#options' => _k4h_modal_forms_fields_list_options(),
-          '#default_value' => (!empty($defaults['k4h_modal_field_override'])) ? $defaults['k4h_modal_field_override'] : '',
-//          '#default_value' => key((!empty($defaults['k4h_modal_field_override'])) ? $defaults['k4h_modal_field_override'] : ''),
-//        ), // end k4h_modal_field_override_list
-      ); // end k4h_modal_field_override
-
-//  $form['k4h_modal_field_override']['k4h_modal_field_override_list'] = form_process_radios($form['k4h_modal_field_override']['k4h_modal_field_override_list']);
-  $form['k4h_modal_field_override'] = form_process_radios($form['k4h_modal_field_override']);
-  return $form['k4h_modal_field_override']; // return the full fields container
+/**
+ * AJAX callback for node form element.
+ *
+ * @param array $form
+ *   Form API form.
+ * @param array $form_state
+ *   Form API form state.
+ *
+ * @return
+ *   Form API array.
+ */
+function _k4h_modal_forms_fields_list($form, $form_state) {
+  return $form['k4h_modal']['k4h_modal_field_override']; // return the full fields container
 }
 
+/**
+ * Provides either the full list of possible link and file fields
+ * or a subset available within a bundle/content type.
+ *
+ * @param $bundle
+ *   Bundle name / content type.
+ *
+ * @return
+ *   An array of fields indexed by fieldname.
+ */
 function _k4h_modal_forms_fields_list_options($bundle = NULL) {
   if (!empty($bundle)) {
-watchdog('k4h_modal_forms', 'bundle is: ' . $bundle);
     return k4h_modal_forms_get_available_fields($bundle);
   }
   return k4h_modal_forms_get_usable_fields();
