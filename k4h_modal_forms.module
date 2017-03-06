@@ -153,7 +153,7 @@ function k4h_modal_forms_form_alter(&$form, &$form_state, $form_id) {
       $form['#submit'][] = 'k4h_modal_forms_email_tracking_submit';
       $class = 'ctools-modal-modal-popup-' . $modal_details['k4h_modal_modal_size'];
       $form['actions']['cancel'] = array(
-        '#markup' => l($cancel_text, '/modal_forms/nojs/dismiss', array('attributes' => array('class' => array('ctools-use-modal', 'ctools-modal-modal-popup-' . $modal_details['k4h_modal_modal_size']))))
+        '#markup' => l($cancel_text, '/modal_forms/nojs/dismiss', array('attributes' => array('class' => array('ctools-use-modal', 'ctools-modal-modal-popup-' . $modal_details['k4h_modal_modal_size'], 'button', 'green'))))
       );
     }
   }
