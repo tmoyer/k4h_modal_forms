@@ -286,6 +286,24 @@ function k4h_modal_forms_process_html(&$vars) {
     }
     $modal_details = unserialize(variable_get('k4h_modal_forms_' . $webform_nid));
 
+    // Use Drupal's filter_dom_load() to create the dom object
+    $dom = filter_dom_load($vars['page']);
+    $finder = new DomXPath($dom);
+    $classname = "file";
+    $nodes = $finder->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' $classname ')]");
+    foreach ($nodes as $node) {
+      $nodeLink = $dom->createElement('a', $node->nodeValue);
+      $nodeLink->setAttribute('href', 'http://d7_k4h.localhost/modal_forms/nojs/webform/' . $webform_nid);
+      $nodeLink->setAttribute('title', $node->nodeValue);
+      $nodeLink->setAttribute('class', 'ctools-use-modal ctools-modal-modal-popup-' . $modal_details['k4h_modal_modal_size']);
+      $node->parentNode->replaceChild($nodeLink, $node);
+      // Use Drupal's filter_dom_serialze to convert back to HTML snippet
+      $vars['page'] = filter_dom_serialize($dom);
+    }
+
+/* Let's use DOMDocument (above) to parse and change the HTML instead of waiting for jQuery
+ * to load and alter the link, but keep the jQuery for now, just in case
+
     // Define the dataLayer for Google TagManager
     $js = "<!--//--><![CDATA[//><!--
       jQuery(document).ready(function ($) {
@@ -298,6 +316,7 @@ function k4h_modal_forms_process_html(&$vars) {
       '#markup' => '<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script><script type="text/javascript">' . $js . '</script>' . "\r\n",
     );
     $vars['page_top'] = drupal_render($output) . $vars['page_top'];
+*/
   }
   return $vars;
 }
