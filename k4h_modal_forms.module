@@ -293,7 +293,7 @@ function k4h_modal_forms_process_html(&$vars) {
     $nodes = $finder->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' $classname ')]");
     foreach ($nodes as $node) {
       $nodeLink = $dom->createElement('a', $node->nodeValue);
-      $nodeLink->setAttribute('href', 'http://d7_k4h.localhost/modal_forms/nojs/webform/' . $webform_nid);
+      $nodeLink->setAttribute('href', '/modal_forms/nojs/webform/' . $webform_nid);
       $nodeLink->setAttribute('title', $node->nodeValue);
       $nodeLink->setAttribute('class', 'ctools-use-modal ctools-modal-modal-popup-' . $modal_details['k4h_modal_modal_size']);
       $node->parentNode->replaceChild($nodeLink, $node);
