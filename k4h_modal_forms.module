@@ -215,6 +215,11 @@ function k4h_modal_forms_webform_submit($form, &$form_state) {
     $new_node = array($k4h_modal_values['k4h_modal_node_autocomplete'] => arg(1));
     if (!empty($current_nodes)) {
       if (!array_key_exists($k4h_modal_values['k4h_modal_node_autocomplete'], $current_nodes)) {
+        // Remove any previous entries for this page/webform
+        if (($key = array_search(arg(1), $current_nodes)) !== FALSE) {
+          unset($current_nodes[$key]);
+        }
+        // Add new entry to data to be saved
         $current_nodes[$k4h_modal_values['k4h_modal_node_autocomplete']] = arg(1);
       }
     } else {
@@ -257,7 +262,7 @@ function k4h_modal_forms_preprocess_page($vars) {
     if (isset($vars['page']['content']['system_main']['nodes']) && $vars['page']['content']['system_main']['nodes'][$nid]) {
       $node = node_load($nid);
       // Link to the resource will either be from a link field or a file field
-      $link = (isset($node->{$modal_details['k4h_modal_field_override']}[LANGUAGE_NONE][0]['url'])) ? $node->{$modal_details['k4h_modal_field_override']}[LANGUAGE_NONE][0]['url'] : file_create_url($node->{$modal_details['k4h_modal_field_override']}[LANGUAGE_NONE][0]['uri']);
+      $link = strstr($modal_details['k4h_modal_field_override'], 'public://') ? file_create_url($modal_details['k4h_modal_field_override']) : $modal_details['k4h_modal_field_override'];
       if ($modal_details['k4h_modal_forward_action'] == 'both') {
         drupal_add_js("
           jQuery(document).ready(function ($) {
@@ -276,6 +281,7 @@ function k4h_modal_forms_preprocess_page($vars) {
  * Implements hook_process_html().
  */
 function k4h_modal_forms_process_html(&$vars) {
+  global $base_url;
   $args = arg();
   $node_path = drupal_lookup_path('source', ltrim(request_uri(), '/'));
   $page_nid = substr($node_path, 5);
@@ -294,8 +300,11 @@ function k4h_modal_forms_process_html(&$vars) {
     // Use Drupal's filter_dom_load() to create the dom object
     $dom = filter_dom_load($vars['page']);
     $links = $dom->getElementsByTagName('a');
+    $override_link = strstr($modal_details['k4h_modal_field_override'], 'public://') ? file_create_url($modal_details['k4h_modal_field_override']) : $modal_details['k4h_modal_field_override'];
+    $base_length = strlen($base_url);
+    $override_link = (strstr($override_link, $base_url)) ? substr($override_link, $base_length) : $override_link;
     foreach ($links as $tag) {
-      if ($tag->getAttribute('href') == $modal_details['k4h_modal_field_override']) {
+      if ($tag->getAttribute('href') == $override_link) {
         $tag->setAttribute('href', '/modal_forms/nojs/webform/' . $webform_nid);
         $tag->setAttribute('class', 'ctools-use-modal ctools-modal-modal-popup-' . $modal_details['k4h_modal_modal_size']);
         $vars['page'] = filter_dom_serialize($dom);
@@ -342,6 +351,10 @@ function k4h_modal_forms_get_available_fields($bundle, $node) {
           $text = (!empty($link['title'])) ? $link['title'] : $link['url'];
           $l = l($text, $link['url']);
           $fields[$link['url']] = $l . ' (' . $key . ')';
+        } elseif (!empty($link['uri'])) {
+          $text = (!empty($link['description'])) ? $link['description'] : $link['filename'];
+          $l = l($text, file_create_url($link['uri']));
+          $fields[$link['uri']] = $l . ' (' . $key . ')';
         }
       }
     }
