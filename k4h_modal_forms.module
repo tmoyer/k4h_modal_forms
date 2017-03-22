@@ -83,7 +83,7 @@ function k4h_modal_forms_form_alter(&$form, &$form_state, $form_id) {
       '#tree' => FALSE,
       '#prefix' => '<div id="node-fields-list">',
       '#suffix' => '</div>',
-      '#type' => 'radios',
+      '#type' => 'checkboxes',
       '#title' => 'Attach popup to field',
       '#description' => 'Select the field to attach the popup to.',
       '#options' => $override_options,
@@ -262,8 +262,24 @@ function k4h_modal_forms_preprocess_page($vars) {
     if (isset($vars['page']['content']['system_main']['nodes']) && $vars['page']['content']['system_main']['nodes'][$nid]) {
       $node = node_load($nid);
       // Link to the resource will either be from a link field or a file field
-      $link = strstr($modal_details['k4h_modal_field_override'], 'public://') ? file_create_url($modal_details['k4h_modal_field_override']) : $modal_details['k4h_modal_field_override'];
+//dpr($modal_details['k4h_modal_field_override']);
+      $num = 0;
+      $count = count($modal_details['k4h_modal_field_override']);
+      foreach ($modal_details['k4h_modal_field_override'] as $item) {
+      $link = strstr($item, 'public://') ? file_create_url($item) : $item;
+//      $link = strstr($modal_details['k4h_modal_field_override'], 'public://') ? file_create_url($modal_details['k4h_modal_field_override']) : $modal_details['k4h_modal_field_override'];
+//            $('ctools-use-modal').eq(" . $num . ").on('CToolsDetachBehaviors', function() {
       if ($modal_details['k4h_modal_forward_action'] == 'both') {
+        if ($num + 1 < $count) {
+        drupal_add_js("
+          jQuery(document).ready(function ($) {
+            $(document).on('CToolsDetachBehaviors', function() {
+              window.open('" . $link . "');
+            });
+          });
+        ", array('type' => 'inline', 'scope' => 'footer'));
+        $vars['scripts'] = drupal_get_js();
+      } else {
         drupal_add_js("
           jQuery(document).ready(function ($) {
             $(document).on('CToolsDetachBehaviors', function() {
@@ -272,6 +288,11 @@ function k4h_modal_forms_preprocess_page($vars) {
           });
         ", array('type' => 'inline', 'scope' => 'footer'));
         $vars['scripts'] = drupal_get_js();
+
+      }
+//
+      }
+      $num++;
       }
     }
   }
@@ -300,7 +321,9 @@ function k4h_modal_forms_process_html(&$vars) {
     // Use Drupal's filter_dom_load() to create the dom object
     $dom = filter_dom_load($vars['page']);
     $links = $dom->getElementsByTagName('a');
-    $override_link = strstr($modal_details['k4h_modal_field_override'], 'public://') ? file_create_url($modal_details['k4h_modal_field_override']) : $modal_details['k4h_modal_field_override'];
+//    $override_link = strstr($modal_details['k4h_modal_field_override'], 'public://') ? file_create_url($modal_details['k4h_modal_field_override']) : $modal_details['k4h_modal_field_override'];
+    foreach ($modal_details['k4h_modal_field_override'] as $item) {
+    $override_link = strstr($item, 'public://') ? file_create_url($item) : $item;
     $base_length = strlen($base_url);
     $override_link = (strstr($override_link, $base_url)) ? substr($override_link, $base_length) : $override_link;
     foreach ($links as $tag) {
@@ -309,6 +332,7 @@ function k4h_modal_forms_process_html(&$vars) {
         $tag->setAttribute('class', 'ctools-use-modal ctools-modal-modal-popup-' . $modal_details['k4h_modal_modal_size']);
         $vars['page'] = filter_dom_serialize($dom);
       }
+    }
     }
 
 /* Let's use DOMDocument (above) to parse and change the HTML instead of waiting for jQuery
@@ -349,11 +373,13 @@ function k4h_modal_forms_get_available_fields($bundle, $node) {
       foreach ($node->{$key}[LANGUAGE_NONE] as $id => $link) {
         if (!empty($link['url'])) {
           $text = (!empty($link['title'])) ? $link['title'] : $link['url'];
-          $l = l($text, $link['url']);
+//          $l = l($text, $link['url']);
+          $l = $text;
           $fields[$link['url']] = $l . ' (' . $key . ')';
         } elseif (!empty($link['uri'])) {
           $text = (!empty($link['description'])) ? $link['description'] : $link['filename'];
-          $l = l($text, file_create_url($link['uri']));
+//          $l = l($text, file_create_url($link['uri']));
+          $l = $text;
           $fields[$link['uri']] = $l . ' (' . $key . ')';
         }
       }
