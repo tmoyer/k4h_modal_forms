@@ -323,13 +323,15 @@ function k4h_modal_forms_webform_submit($form, &$form_state) {
   }
   if (!empty($k4h_modal_values)) {
     variable_set('k4h_modal_forms_' . arg(1), $k4h_modal_values);
-    $new_nodes = array();
+
+    $current_nodes = variable_get('k4h_modal_nodes', '');
+    $webform_nid = arg(1);
     foreach ($k4h_modal_values as $k => $v) {
       if (is_numeric($k)) {
-        $new_nodes[$v] = arg(1);
+        $current_nodes[$v] = $webform_nid;
       }
     }
-    variable_set('k4h_modal_nodes', $new_nodes);
+    variable_set('k4h_modal_nodes', $current_nodes);
   }
 }
 
@@ -426,9 +428,11 @@ function k4h_modal_forms_process_html(&$vars) {
     foreach ($modal_details['k4h_modal_field_override'] as $item) {
     $override_link = strstr($item, 'public://') ? file_create_url($item) : $item;
     $base_length = strlen($base_url);
+    // Prepare to check both the full link (with base_url) and the relative link
+    $override_link_full = (strstr($override_link, $base_url)) ? $override_link : $base_url . $override_link;
     $override_link = (strstr($override_link, $base_url)) ? substr($override_link, $base_length) : $override_link;
     foreach ($links as $tag) {
-      if ($tag->getAttribute('href') == $override_link) {
+      if ($tag->getAttribute('href') == $override_link || $tag->getAttribute('href') == $override_link_full) {
         // Don't alter page links if user has already agreed to webform conditions
         if (isset($_COOKIE[$cookie_name])) {
           $tag->setAttribute('title', 'resource unlocked');
