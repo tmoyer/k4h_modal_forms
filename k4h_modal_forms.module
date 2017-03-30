@@ -88,6 +88,7 @@ function k4h_modal_forms_form_alter(&$form, &$form_state, $form_id) {
 
     for ($i = 1; $i <= $form_state['number_nodes']; $i++) {
       $node_autocomplete = (isset($modal_nodes[$i]) && isset($modal_nodes[$i]->title)) ? $modal_nodes[$i]->title . ' [id: ' . $modal_nodes[$i]->nid . ']' : '';
+
       $form['k4h_modal']['k4h_modal_node_autocomplete']['node'][$i] =  array(
         '#type' => 'textfield',
         '#title' => 'Autocomplete node field',
@@ -103,6 +104,7 @@ function k4h_modal_forms_form_alter(&$form, &$form_state, $form_id) {
         '#default_value' => $node_autocomplete,
       );
     }
+
     $form['k4h_modal']['k4h_modal_node_autocomplete']['add_item'] = array(
       '#type' => 'submit',
       '#value' => t('Add another node'),
@@ -112,21 +114,6 @@ function k4h_modal_forms_form_alter(&$form, &$form_state, $form_id) {
         'wrapper' => 'nodes-fieldset-wrapper',
       ),
     );
-
-    if ($form_state['number_nodes'] > 1) {
-
-      $form['k4h_modal']['k4h_modal_node_autocomplete']['remove_item'] = array(
-        '#type' => 'submit',
-        '#value' => t('Remove latest node'),
-        '#submit' => array('k4h_modal_forms_remove_item'),
-        // Since we are removing a name, don't validate until later.
-        '#limit_validation_errors' => array(),
-        '#ajax' => array(
-          'callback' => 'k4h_modal_forms_add_more_callback',
-          'wrapper' => 'nodes-fieldset-wrapper',
-        ),
-      );
-    }
 
     $form['k4h_modal']['k4h_modal_field_override'] = array(
       '#tree' => FALSE,
@@ -138,6 +125,7 @@ function k4h_modal_forms_form_alter(&$form, &$form_state, $form_id) {
       '#options' => k4h_modal_forms_get_all_options($modal_nodes),
       '#default_value' => (!empty($defaults['k4h_modal_field_override'])) ? $defaults['k4h_modal_field_override'] : '',
     ); // end k4h_modal_field_override
+
     $form['k4h_modal']['k4h_modal_forward_action'] = array(
       '#type' => 'radios',
       '#title' => 'Select when to forward the user to the resource',
@@ -147,12 +135,14 @@ function k4h_modal_forms_form_alter(&$form, &$form_state, $form_id) {
       ),
       '#default_value' => (!empty($defaults['k4h_modal_forward_action'])) ? $defaults['k4h_modal_forward_action'] : 'both',
     );
+
     $form['k4h_modal']['k4h_modal_cancel_link'] = array(
       '#type' => 'textfield',
       '#title' => 'Text to use for the cancel link',
       '#maxlength' => 512,
       '#default_value' => (!empty($defaults['k4h_modal_cancel_link'])) ? $defaults['k4h_modal_cancel_link'] : t('No thanks'),
     );
+
     $form['k4h_modal']['k4h_modal_modal_size'] = array(
       '#type' => 'radios',
       '#title' => 'Popup size',
@@ -163,35 +153,13 @@ function k4h_modal_forms_form_alter(&$form, &$form_state, $form_id) {
       ),
       '#default_value' => (!empty($defaults['k4h_modal_modal_size'])) ? $defaults['k4h_modal_modal_size'] : 'small',
     );
+
     $form['#submit'][] = 'k4h_modal_forms_webform_submit';
 
-    if (!empty($form_state['values'][1]) || isset($form_state['remove_item'])) {
+    if (!empty($form_state['values'][1])) {
       $values = $form_state['values'];
       $nodes = array();
-      foreach ($values as $id => $value) {
-        if (is_numeric($id)) {
-          $value = (strstr($value, '[id:')) ? $value : $form_state['triggering_element']['#value'];
-          if (strstr($value, '[id:')) {
-            $nid_parts = explode('[', $value);
-            $nid_parts2 = explode(': ', rtrim($nid_parts[1], ']'));
-            $node = node_load($nid_parts2[1]);
-          }
-          $type = (isset($node)) ? $node->type : NULL;
-          $list_options = (isset($list_options)) ? array_merge($list_options, _k4h_modal_forms_fields_list_options($type, $node)) : _k4h_modal_forms_fields_list_options($type, $node);
-        }
-      }
-
-/*
-      $value = (strstr($values['k4h_modal_node_autocomplete'], '[id:')) ? $values['k4h_modal_node_autocomplete'] : $form_state['triggering_element']['#value'];
-      if (strstr($value, '[id:')) {
-        $nid_parts = explode('[', $form_state['values']['k4h_modal_node_autocomplete']);
-        $nid_parts2 = explode(': ', rtrim($nid_parts[1], ']'));
-        $node = node_load($nid_parts2[1]);
-      }
-      $type = (isset($node)) ? $node->type : NULL;
-*/
-
-//      $form['k4h_modal']['k4h_modal_field_override']['#options'] = _k4h_modal_forms_fields_list_options($type, $node);
+      $list_options = _k4h_modal_forms_get_list_options($values, $form_state);
       $form['k4h_modal']['k4h_modal_field_override']['#options'] = $list_options;
     }
 
@@ -231,29 +199,10 @@ function k4h_modal_forms_form_alter(&$form, &$form_state, $form_id) {
  * Submit callback to add another node autocomplete field to the form.
  */
 function k4h_modal_forms_add_item($form, &$form_state) {
-  // All we need is to increase the number used in our for loop above ...
   $form_state['number_nodes']++;
-  // ... and rebuild our form.
-//  $form_state['rebuild'] = TRUE;
   $form_state['rerender'] = TRUE;
   $form_state['rebuild'] = TRUE;
   $form_state['force_build_group_options'] = TRUE;
-}
-
-/**
- * Submit callback to remove the last node field from the form.
- */
-function k4h_modal_forms_remove_item($form, &$form_state) {
-
-  // Just the other way around until only one item is left ...
-  if ($form_state['number_nodes'] > 1) {
-    $form_state['number_nodes']--;
-  }
-  // ... and form rebuild again.
-  $form_state['rerender'] = TRUE;
-  $form_state['rebuild'] = TRUE;
-  $form_state['force_build_group_options'] = TRUE;
-watchdog('k4h_modal_forms', print_r($form['k4h_modal']['k4h_modal_field_override'], TRUE));
 }
 
 /**
@@ -274,6 +223,56 @@ function k4h_modal_forms_select($string) {
   }
   drupal_json_output($matches);
   exit;
+}
+
+/**
+ * Helper function that provides a list of fields that can be
+ * associated with the webform, from all passed nodes.
+ *
+ * @param $values
+ *   The list of autocompleted nodes to be associated with this webform.
+ *
+ * @param $form_state
+ *   The given $form_state of this current form.
+ *
+ * @return
+ *   Returns an array of all file and url fields in all provided nodes.
+ */
+function _k4h_modal_forms_get_list_options($values, $form_state) {
+  $list_options = array();
+  foreach ($values as $id => $value) {
+    if (is_numeric($id)) {
+      $value = (strstr($value, '[id:')) ? $value : $form_state['triggering_element']['#value'];
+      $autocomplete_nid = _k4h_modal_forms_get_nid_from_autocomplete_string($value);
+      if (empty($autocomplete_nid)) {
+        continue;
+      }
+      $node = node_load($autocomplete_nid);
+      $type = (isset($node)) ? $node->type : NULL;
+      $list_options = (isset($list_options)) ? array_merge($list_options, _k4h_modal_forms_fields_list_options($type, $node)) : _k4h_modal_forms_fields_list_options($type, $node);
+    }
+  }
+  return $list_options;
+}
+
+/**
+ * Helper function that parses out the node id from a full autocomplete string.
+ *
+ * @param $string
+ *    The full autocomplete string in the form of "Title [id: id]".
+ *
+ * @return
+ *    Returns either a nid or false.
+ */
+function _k4h_modal_forms_get_nid_from_autocomplete_string($string) {
+  if (strstr($string, '[id:')) {
+    $nid_parts = explode('[', $string);
+    $nid_parts2 = explode(': ', rtrim($nid_parts[1], ']'));
+    return $nid_parts2[1];
+  } elseif (is_numeric($string)) { // String is already a nid
+    return $string;
+  }
+  return FALSE;
 }
 
 /**
@@ -315,19 +314,7 @@ function k4h_modal_forms_webform_submit($form, &$form_state) {
         unset($value);
         continue;
       }
-      if (strstr($value, '[id:')) {
-        $nid_parts = explode('[', $value);
-        $nid_parts2 = explode(': ', rtrim($nid_parts[1], ']'));
-        $value = $nid_parts2[1]; // Just assign the nid, we don't need the title
-      }
-    }
-    // Make sure no field override entries with value of 0 are saved
-    if ($key == 'k4h_modal_field_override') {
-      foreach ($value as $k => $entry) {
-//        if ($entry === 0) {
-//          unset($value[$k]);
-//        }
-      }
+      $value = _k4h_modal_forms_get_nid_from_autocomplete_string($value);
     }
     $k4h_modal_values[$key] = $value;
   }
@@ -501,7 +488,7 @@ function k4h_modal_forms_get_available_fields($bundle, $node) {
   $keys = array_keys(field_info_instances('node', $bundle));
   $fields = array();
   foreach ($keys as $key) {
-    if (in_array($key, $usable_fields)) {
+    if (in_array($key, $usable_fields) && isset($node->{$key}[LANGUAGE_NONE])) {
       foreach ($node->{$key}[LANGUAGE_NONE] as $id => $link) {
         if (!empty($link['url'])) {
           $text = (!empty($link['title'])) ? $link['title'] : $link['url'];
