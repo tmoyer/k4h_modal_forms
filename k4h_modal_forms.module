@@ -427,6 +427,9 @@ function k4h_modal_forms_process_html(&$vars) {
 //    $override_link = strstr($modal_details['k4h_modal_field_override'], 'public://') ? file_create_url($modal_details['k4h_modal_field_override']) : $modal_details['k4h_modal_field_override'];
     foreach ($modal_details['k4h_modal_field_override'] as $item) {
       $override_link = strstr($item, 'public://') ? file_create_url($item) : $item;
+      if ($override_link === 0) {
+        continue;
+      }
       $base_length = strlen($base_url);
       // Prepare to check both the full link (with base_url) and the relative link
       $override_link_full = (strstr($override_link, $base_url)) ? $override_link : $base_url . $override_link;
