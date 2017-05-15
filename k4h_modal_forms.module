@@ -440,7 +440,7 @@ function k4h_modal_forms_process_html(&$vars) {
       $override_link = (strstr($override_link, $base_url)) ? substr($override_link, $base_length) : $override_link;
       foreach ($links as $tag) {
         if ($tag->getAttribute('href') == $override_link || $tag->getAttribute('href') == $override_link_full) {
-          $script .= '    $("a[href=\'' . $tag->getAttribute('href') . '\']").attr(\'href\', \'' . '/modal_forms/nojs/webform/' . $webform_nid  . '\').attr(\'class\', \''  . 'ctools-use-modal ctools-modal-modal-popup-' . $modal_details['k4h_modal_modal_size'] . '\')';
+          $script .= '    $("a[href=\'' . $tag->getAttribute('href') . '\']").attr(\'href\', \'' . '/modal_forms/nojs/webform/' . $webform_nid  . '\').attr(\'class\', \''  . 'ctools-use-modal ctools-modal-modal-popup-' . $modal_details['k4h_modal_modal_size'] . '\');' . "\r\n";
         }
       }
     }
