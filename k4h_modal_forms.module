@@ -355,10 +355,14 @@ function k4h_modal_forms_preprocess_page($vars) {
       $node = node_load($nid);
       $count = count($modal_details['k4h_modal_field_override']);
       // Link to the resource will either be from a link field or a file field
+    $cookie_name = 'k4h_modal_agreed_' . $webform_nid;
+    $dom = filter_dom_load($vars['page']);
+    $links = $dom->getElementsByTagName('a');
       foreach ($modal_details['k4h_modal_field_override'] as $item) {
+
+        // Add jQuery to handle closing of popup modal
         $link = strstr($item, 'public://') ? file_create_url($item) : $item;
 //      $link = strstr($modal_details['k4h_modal_field_override'], 'public://') ? file_create_url($modal_details['k4h_modal_field_override']) : $modal_details['k4h_modal_field_override'];
-//            $('ctools-use-modal').eq(" . $num . ").on('CToolsDetachBehaviors', function() {
         if ($modal_details['k4h_modal_forward_action'] == 'both') {
           // If there's only 1 link on the page, forward to it when modal closes
           if ($count === 1) {
@@ -424,7 +428,7 @@ function k4h_modal_forms_process_html(&$vars) {
     // Use Drupal's filter_dom_load() to create the dom object
     $dom = filter_dom_load($vars['page']);
     $links = $dom->getElementsByTagName('a');
-//    $override_link = strstr($modal_details['k4h_modal_field_override'], 'public://') ? file_create_url($modal_details['k4h_modal_field_override']) : $modal_details['k4h_modal_field_override'];
+    $script = '';
     foreach ($modal_details['k4h_modal_field_override'] as $item) {
       $override_link = strstr($item, 'public://') ? file_create_url($item) : $item;
       if ($override_link === 0) {
@@ -436,34 +440,23 @@ function k4h_modal_forms_process_html(&$vars) {
       $override_link = (strstr($override_link, $base_url)) ? substr($override_link, $base_length) : $override_link;
       foreach ($links as $tag) {
         if ($tag->getAttribute('href') == $override_link || $tag->getAttribute('href') == $override_link_full) {
-          // Don't alter page links if user has already agreed to webform conditions
-          if (isset($_COOKIE[$cookie_name])) {
-            $tag->setAttribute('title', 'resource unlocked');
-          } else {
-            $tag->setAttribute('href', '/modal_forms/nojs/webform/' . $webform_nid);
-            $tag->setAttribute('class', 'ctools-use-modal ctools-modal-modal-popup-' . $modal_details['k4h_modal_modal_size']);
-          }
-          $vars['page'] = filter_dom_serialize($dom);
+          $script .= '    $("a[href=\'' . $tag->getAttribute('href') . '\']").attr(\'href\', \'' . '/modal_forms/nojs/webform/' . $webform_nid  . '\').attr(\'class\', \''  . 'ctools-use-modal ctools-modal-modal-popup-' . $modal_details['k4h_modal_modal_size'] . '\')';
         }
       }
     }
+    if ($script != '') {
+      $js = "\r\n<!--//--><![CDATA[//><!--\r\n(function ($) {\r\n";
+      $js .= "  if ($.cookie('$cookie_name') == undefined) {\r\n";
+      $js .= $script . "\r\n";
+      $js .= "  }\r\n";
+      $js .= "}(jQuery));\r\n//--><!]]>\r\n";
+      $output = array(
+        '#type' => 'markup',
+        '#markup' => '<script type="text/javascript">' . $js . "</script>\r\n",
+      );
+      $vars['page_bottom'] = drupal_render($output) . $vars['page_bottom'];
+    }
 
-/* Let's use DOMDocument (above) to parse and change the HTML instead of waiting for jQuery
- * to load and alter the link, but keep the jQuery for now, just in case
-
-    // Define the dataLayer for Google TagManager
-    $js = "<!--//--><![CDATA[//><!--
-      jQuery(document).ready(function ($) {
-        $('.file').find('a').addClass('ctools-use-modal ctools-modal-modal-popup-" . $modal_details['k4h_modal_modal_size'] . "').attr('href', '/modal_forms/nojs/webform/" . $webform_nid . "').removeAttr('type');
-      });
-      //--><!]]>
-      ";
-    $output = array(
-      '#type' => 'markup',
-      '#markup' => '<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script><script type="text/javascript">' . $js . '</script>' . "\r\n",
-    );
-    $vars['page_top'] = drupal_render($output) . $vars['page_top'];
-*/
   }
   return $vars;
 }
