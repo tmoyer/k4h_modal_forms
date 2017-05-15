@@ -447,7 +447,7 @@ function k4h_modal_forms_process_html(&$vars) {
     if ($script != '') {
       $js = "\r\n<!--//--><![CDATA[//><!--\r\n(function ($) {\r\n";
       $js .= "  if ($.cookie('$cookie_name') == undefined) {\r\n";
-      $js .= $script . "\r\n";
+      $js .= $script;
       $js .= "  }\r\n";
       $js .= "}(jQuery));\r\n//--><!]]>\r\n";
       $output = array(
