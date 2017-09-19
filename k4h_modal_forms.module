@@ -157,7 +157,7 @@ function k4h_modal_forms_form_alter(&$form, &$form_state, $form_id) {
   } // end if this is a webform
 
   // Skip if the form isn't being loaded in a modal
-  if ($args[0] != 'modal_forms' && $args[1] != 'ajax') {
+  if ((isset($args[0]) && isset($args[1])) && ($args[0] != 'modal_forms' && $args[1] != 'ajax')) {
     RETURN;
   }
   $modal_pages = variable_get('k4h_modal_nodes', '');
