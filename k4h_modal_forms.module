@@ -4,6 +4,7 @@
  * @file Integration for k4h site and epub_export.
  */
 
+
 /**
  * Implements hook_menu().
  */
@@ -158,24 +159,30 @@ function k4h_modal_forms_form_alter(&$form, &$form_state, $form_id) {
 
   // Skip if the form isn't being loaded in a modal
   if ((isset($args[0]) && isset($args[1])) && ($args[0] != 'modal_forms' && $args[1] != 'ajax')) {
-    RETURN;
+    return;
   }
+
   $modal_pages = variable_get('k4h_modal_nodes', '');
+
   // If there are no pages with modal popups on them, stop here
   if (empty($modal_pages)) {
     return;
   }
+
   foreach ($modal_pages as $nid => $webform_nid) {
     // Only proceed if this is a page with a modal form popup
     if (isset($args[3]) && $webform_nid != $args[3]) {
       continue;
     }
+
     $modal_details = variable_get('k4h_modal_forms_' . $webform_nid);
+
     // Add to the email tracking for content adpatation form
     if ($form_id == 'webform_client_form_' . $webform_nid) {
       if (current_path() == 'system/ajax') {
         $current_path = (!empty($base_url)) ? $base_url : $_SERVER['HTTP_REFERER'];
       }
+
       $cancel_text = (isset($modal_details['k4h_modal_cancel_link']) && !empty($modal_details['k4h_modal_cancel_link'])) ? t($modal_details['k4h_modal_cancel_link']) : t('No thanks@');
       $form['#submit'][] = 'k4h_modal_forms_email_tracking_submit';
       $class = 'ctools-modal-modal-popup-' . $modal_details['k4h_modal_modal_size'];
@@ -187,7 +194,12 @@ function k4h_modal_forms_form_alter(&$form, &$form_state, $form_id) {
 }
 
 /**
- * Submit callback to add another node autocomplete field to the form.
+ * Form submission handler for $form['k4h_modal']['k4h_modal_node_autocomplete']['add_item']
+ * in k4h_modal_forms_form_alter().
+ *
+ * Adds another node autocomplete field to the form.
+ *
+ * @see k4h_modal_forms_form_alter()
  */
 function k4h_modal_forms_add_item($form, &$form_state) {
   $form_state['number_nodes']++;
@@ -197,17 +209,29 @@ function k4h_modal_forms_add_item($form, &$form_state) {
 }
 
 /**
- * Ajax callback for add more nodes form section.
+ * Ajax callback for $form['k4h_modal']['k4h_modal_node_autocomplete']['add_item']
+ * in k4h_modal_forms_form_alter().
+ * 
+ * Adds more nodes to form section.
+ *
+ * @see k4h_modal_forms_form_alter()
  */
 function k4h_modal_forms_add_more_callback($form, $form_state) {
   return $form['k4h_modal']['k4h_modal_node_autocomplete'];
 }
 
 /**
- * Autocomplete callback to find node by title.
+ * Autocomplete callback for k4h_modal_forms_menu().
+ *
+ * Finds node by title.
+ *
+ * @param string $string
+ *   The string to search for to autocomplete.
+ *
+ * @see k4h_modal_forms_menu()
  */
 function k4h_modal_forms_select($string) {
-  $result = db_query("SELECT title, nid FROM {node} WHERE title LIKE '%$string%' LIMIT 10");
+  $result = db_query("SELECT title, nid FROM {node} WHERE title LIKE '%:string%' LIMIT 10", array(':string' => $string));
   $matches = array();
   foreach ($result as $record) {
     $matches[$record->nid] = check_plain($record->title);
@@ -267,7 +291,7 @@ function _k4h_modal_forms_get_nid_from_autocomplete_string($string) {
 }
 
 /**
- * Submit handler for the modal form submit.
+ * Form submission handler for k4h_modal_forms_form_alter().
  */
 function k4h_modal_forms_email_tracking_submit($form, &$form_state) {
   ctools_include('ajax');
@@ -284,7 +308,7 @@ function k4h_modal_forms_email_tracking_submit($form, &$form_state) {
 }
 
 /**
- * Submit handler for webform config form submit.
+ * Form submission handler for k4h_modal_forms_form_alter().
  */
 function k4h_modal_forms_webform_submit($form, &$form_state) {
   // Exclude unnecessary elements.
@@ -335,15 +359,18 @@ function k4h_modal_forms_preprocess_page($vars) {
   $page_nid = substr($node_path, 5);
 
   $modal_pages = variable_get('k4h_modal_nodes', '');
+
   // If there are no pages with modal popups on them, stop here
   if (empty($modal_pages)) {
     return;
   }
+
   foreach ($modal_pages as $nid => $webform_nid) {
     // Only proceed if this is a page with a modal form popup
     if ($nid != $page_nid) {
       continue;
     }
+
     $modal_details = variable_get('k4h_modal_forms_' . $webform_nid);
 
     // If there are no details to work with, stop
@@ -354,15 +381,15 @@ function k4h_modal_forms_preprocess_page($vars) {
     if (isset($vars['page']['content']['system_main']['nodes']) && $vars['page']['content']['system_main']['nodes'][$nid]) {
       $node = node_load($nid);
       $count = count($modal_details['k4h_modal_field_override']);
+
       // Link to the resource will either be from a link field or a file field
-    $cookie_name = 'k4h_modal_agreed_' . $webform_nid;
-    $dom = filter_dom_load($vars['page']);
-    $links = $dom->getElementsByTagName('a');
+      $cookie_name = 'k4h_modal_agreed_' . $webform_nid;
+      $dom = filter_dom_load($vars['page']);
+      $links = $dom->getElementsByTagName('a');
       foreach ($modal_details['k4h_modal_field_override'] as $item) {
 
         // Add jQuery to handle closing of popup modal
         $link = strstr($item, 'public://') ? file_create_url($item) : $item;
-//      $link = strstr($modal_details['k4h_modal_field_override'], 'public://') ? file_create_url($modal_details['k4h_modal_field_override']) : $modal_details['k4h_modal_field_override'];
         if ($modal_details['k4h_modal_forward_action'] == 'both') {
           // If there's only 1 link on the page, forward to it when modal closes
           if ($count === 1) {
@@ -423,6 +450,7 @@ function k4h_modal_forms_process_html(&$vars) {
     if ($nid != $page_nid) {
       continue;
     }
+
     $modal_details = variable_get('k4h_modal_forms_' . $webform_nid);
 
     // Use Drupal's filter_dom_load() to create the dom object
@@ -434,7 +462,9 @@ function k4h_modal_forms_process_html(&$vars) {
       if ($override_link === 0) {
         continue;
       }
+
       $base_length = strlen($base_url);
+
       // Prepare to check both the full link (with base_url) and the relative link
       $override_link_full = (strstr($override_link, $base_url)) ? $override_link : $base_url . $override_link;
       $override_link = (strstr($override_link, $base_url)) ? substr($override_link, $base_length) : $override_link;
@@ -444,6 +474,7 @@ function k4h_modal_forms_process_html(&$vars) {
         }
       }
     }
+
     if ($script != '') {
       $js = "\r\n<!--//--><![CDATA[//><!--\r\n(function ($) {\r\n";
       $js .= "  if ($.cookie('$cookie_name') == undefined) {\r\n";
@@ -462,7 +493,7 @@ function k4h_modal_forms_process_html(&$vars) {
 }
 
 /**
- * Provides a list of available fields used within a content type (bundle).
+ * Provides a list of available fields used within a content type (bundle) for _k4h_modal_forms_fields_list_options().
  *
  * @param $bundle
  *   A bundle type / content type.
@@ -493,7 +524,8 @@ function k4h_modal_forms_get_available_fields($bundle, $node) {
 }
 
 /**
- * Provides a list of all possible link and file type fields.
+ * Provides a list of all possible link and file type fields for _k4h_modal_forms_fields_list_options(),
+ * k4h_modal_forms_get_all_options(), and k4h_modal_forms_get_available_fields().
  *
  * @return
  *   An array of fields indexed by fieldname.
@@ -517,7 +549,7 @@ function k4h_modal_forms_get_usable_fields() {
 }
 
 /**
- * AJAX callback for node form element.
+ * AJAX callback for $form['k4h_modal']['k4h_modal_node_autocomplete']['node'][$i] in k4h_modal_forms_form_alter().
  *
  * @param array $form
  *   Form API form.
@@ -532,8 +564,8 @@ function _k4h_modal_forms_fields_list($form, $form_state) {
 }
 
 /**
- * Provides either the full list of possible link and file fields
- * or a subset available within a bundle/content type.
+ * Provides either the full list of possible link and file fields or a subset
+ * available within a bundle/content type.
  *
  * @param $bundle
  *   Bundle name / content type.
@@ -549,8 +581,8 @@ function _k4h_modal_forms_fields_list_options($bundle = NULL, $node = NULL) {
 }
 
 /**
- * Provides a list of all link options to associate with a modal webform available and selected
- * based on the nodes passed.
+ * Provides a list of all link options to associate with a modal webform
+ * available and selected based on the nodes passed.
  *
  * @param $nodes
  *   An array of node objects.
@@ -562,8 +594,10 @@ function k4h_modal_forms_get_all_options($nodes) {
   foreach ($nodes as $modal_node) {
     $options = (!empty($options)) ? array_merge($options, _k4h_modal_forms_fields_list_options($modal_node->type, $modal_node)) : _k4h_modal_forms_fields_list_options($modal_node->type, $modal_node);
   }
+
   if (empty($options)) {
     k4h_modal_forms_get_usable_fields();
   }
+
   return $options;
 }
